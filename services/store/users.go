@@ -41,6 +41,10 @@ func AddUser(user *User) error {
 	// 对密码加密
 	toHash := append([]byte(user.Password), salt...)                               // 拼接密码和随机数种子
 	hashedPassword, err := bcrypt.GenerateFromPassword(toHash, bcrypt.DefaultCost) // 计算哈希值
+	if err != nil {
+		log.Error().Err(err).Msg("Error hashing password")
+		return err
+	}
 
 	// 设置加密的密码
 	user.Salt = salt
@@ -49,7 +53,8 @@ func AddUser(user *User) error {
 	// 插入数据
 	_, err = db.Model(user).Returning("*").Insert()
 	if err != nil {
-		return err
+		log.Error().Err(err).Msg("Error inserting new user")
+		return dbError(err)
 	}
 	return nil
 }

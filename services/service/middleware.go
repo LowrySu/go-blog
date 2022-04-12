@@ -2,11 +2,13 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"go-blog/services/store"
 	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
 )
 
@@ -74,4 +76,59 @@ func currentUser(ctx *gin.Context) (*store.User, error) {
 	}
 
 	return user, nil
+}
+
+func customErrors(ctx *gin.Context) {
+	// 修改gin内部的报错信息
+
+	// 先正常运行程序
+	ctx.Next()
+
+	// 捕捉error
+	if len(ctx.Errors) > 0 {
+		for _, err := range ctx.Errors {
+			// 检查错误类型
+			switch err.Type {
+			case gin.ErrorTypePublic:
+				// Show public errors only if nothing has been written yet
+				if !ctx.Writer.Written() {
+					ctx.AbortWithStatusJSON(ctx.Writer.Status(), gin.H{"error": err.Error()})
+				}
+			case gin.ErrorTypeBind:
+				errMap := make(map[string]string)
+				if errs, ok := err.Err.(validator.ValidationErrors); ok {
+					for _, fieldErr := range []validator.FieldError(errs) {
+						errMap[fieldErr.Field()] = customValidationError(fieldErr)
+					}
+				}
+				status := http.StatusBadGateway
+				// Preserve current status
+				if ctx.Writer.Status() != http.StatusOK {
+					status = ctx.Writer.Status()
+				}
+				ctx.AbortWithStatusJSON(status, gin.H{"error": errMap})
+			default:
+				log.Panic().Err(err).Msg("TypeBind: other error")
+			}
+		}
+		// If there was no public or bind error, display default 500 message
+		if !ctx.Writer.Written() {
+			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": InternalServerError})
+		}
+	}
+}
+
+func customValidationError(err validator.FieldError) string {
+	// 自定义的验证错误
+	switch err.Tag() {
+	case "required":
+		return fmt.Sprintf("%s is required.", err.Field())
+	case "min":
+		return fmt.Sprintf("%s must be longer than or equal %s characters.", err.Field(), err.Param())
+	case "max":
+		return fmt.Sprintf("%s cannot be longer than %s characters.", err.Field(), err.Param())
+	default:
+		return err.Error()
+	}
+
 }

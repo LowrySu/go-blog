@@ -6,6 +6,8 @@ import (
 	"go-blog/services/store"
 )
 
+const InternalServerError = "Something went wrong!"
+
 func Start(cfg conf.Config) {
 	// 建立jwt的签名者和验证者
 	jwtSetup(cfg)

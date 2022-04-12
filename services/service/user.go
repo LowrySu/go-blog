@@ -8,13 +8,10 @@ import (
 )
 
 func signUp(ctx *gin.Context) {
+	// 获取属性并创建用户
+	user := ctx.MustGet(gin.BindKey).(*store.User)
 
-	user := new(store.User)
-	if err := ctx.Bind(user); err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"err": err.Error()})
-		return
-	}
-
+	// 添加用户
 	if err := store.AddUser(user); err != nil {
 		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"msg": err.Error()})
 		return
@@ -29,12 +26,7 @@ func signUp(ctx *gin.Context) {
 func signIn(ctx *gin.Context) {
 
 	// 新建一个用户
-	user := new(store.User)
-	// 把请求信息添加到用户的属性内
-	if err := ctx.Bind(user); err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"err": err.Error()})
-		return
-	}
+	user := ctx.MustGet(gin.BindKey).(*store.User)
 
 	// 验证请求信息和数据库信息
 	user, err := store.Authenticate(user.Username, user.Password)
@@ -49,4 +41,3 @@ func signIn(ctx *gin.Context) {
 		"jwt": generateJWT(user),
 	})
 }
-

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"go-blog/services/store"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -16,12 +17,13 @@ func setRouter() *gin.Engine {
 
 	// 创建API路由组
 	api := router.Group("/api")
+	api.Use(customErrors)
 	{
 		api.GET("/hello", func(c *gin.Context) {
 			c.JSON(200, gin.H{"msg": "world"})
 		})
-		api.POST("/signup", signUp)
-		api.POST("/signin", signIn)
+		api.POST("/signup", gin.Bind(store.User{}), signUp)
+		api.POST("/signin", gin.Bind(store.User{}), signIn)
 	}
 
 	// 博客路由组

@@ -28,7 +28,10 @@ func setRouter() *gin.Engine {
 	authorized := api.Group("/")
 	authorized.Use(authorization) // 使用中间件认证用户
 	{
+		authorized.GET("/posts", indexPosts)
 		authorized.POST("/posts", createPost)
+		authorized.PUT("/posts", updatePost)
+		authorized.DELETE("/posts/:id", deletePost)
 	}
 
 	// 404

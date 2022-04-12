@@ -86,6 +86,12 @@ func NewConfig() Config {
 	}
 }
 
+func NewTestConfig() Config {
+	testConfig := NewConfig()
+	testConfig.DbName = testConfig.DbName + "_test"
+	return testConfig
+}
+
 func logAndPanic(envVar string) {
 	log.Panic().Str("envVal", envVar).Msg("variable not set or value not valid: ")
 	panic(envVar)

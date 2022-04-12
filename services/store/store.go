@@ -3,6 +3,8 @@ package store
 import (
 	"errors"
 	"fmt"
+	"go-blog/services/conf"
+	"go-blog/services/database"
 	"regexp"
 	"strings"
 
@@ -19,6 +21,22 @@ func SetDBConnection(dbOpts *pg.Options) {
 		log.Panic().Msg("DB options can’t be nil")
 	} else {
 		db = pg.Connect(dbOpts)
+	}
+}
+
+func ResetTestDatabase() {
+	// Connect to test database
+	SetDBConnection(database.NewDBOptions(conf.NewTestConfig()))
+
+	// Empty all tables and restart sequence counters
+	tables := []string{"users", "posts"}
+	for _, table := range tables {
+		_, err := db.Exec(fmt.Sprintf("DELETE FROM %s;", table))
+		if err != nil {
+			log.Panic().Err(err).Str("table", table).Msg("Error clearing test database")
+		}
+
+		_, err = db.Exec(fmt.Sprintf("ALTER SEQUENCE %s_id_seq RESTART;", table))
 	}
 }
 
